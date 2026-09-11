@@ -262,7 +262,7 @@ function logout() {
   state.session = null;
   state.vendedorTab = 'productos'; state.adminTab = 'vendedores'; state.adminSelected = null;
   localStorage.removeItem('festivalUvaSession');
-  window.location.replace('index.html');
+  window.location.replace('../index.html');
 }
 
 /* ============================================================
