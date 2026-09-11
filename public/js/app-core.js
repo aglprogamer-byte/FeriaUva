@@ -146,7 +146,7 @@ const charts = {}; // canvasId -> Chart instance
 const app = document.getElementById('app');
 
 function grapesLogo(size = 30) {
-  return `<img class="grapes-logo" src="imagen/logo.jpg" width="${size}" height="${size}" alt="Feria de la Uva Villa del Rosario 2026">`;
+  return `<img class="grapes-logo" src="/assets/images/logo.jpg" width="${size}" height="${size}" alt="Feria de la Uva Villa del Rosario 2026">`;
 }
 
 /* ============================================================
@@ -158,13 +158,13 @@ function render() {
     return;
   }
   if (APP_PAGE === 'auth') {
-    if (state.session) { window.location.replace(state.session.role === 'admin' ? 'admin.html' : 'vendedor.html'); return; }
+    if (state.session) { window.location.replace(state.session.role === 'admin' ? '/pages/admin.html' : '/pages/vendedor.html'); return; }
     renderAuth();
     return;
   }
   if (!state.session) { window.location.replace('index.html'); return; }
-  if (APP_PAGE === 'admin' && state.session.role !== 'admin') { window.location.replace('vendedor.html'); return; }
-  if (APP_PAGE === 'vendedor' && state.session.role === 'admin') { window.location.replace('admin.html'); return; }
+  if (APP_PAGE === 'admin' && state.session.role !== 'admin') { window.location.replace('/pages/vendedor.html'); return; }
+  if (APP_PAGE === 'vendedor' && state.session.role === 'admin') { window.location.replace('/pages/admin.html'); return; }
   if (APP_PAGE === 'admin') { renderAdmin(); } else { renderVendedor(); }
 }
 
@@ -232,7 +232,7 @@ async function doLogin() {
   state.session = { id: u.id, username: u.username, role: u.rol, nombre: u.nombre };
   localStorage.setItem('festivalUvaSession', JSON.stringify(state.session));
   state.authError = '';
-  window.location.replace(state.session.role === 'admin' ? 'admin.html' : 'vendedor.html');
+  window.location.replace(state.session.role === 'admin' ? '/pages/admin.html' : '/pages/vendedor.html');
 }
 
 async function doRegister() {
@@ -255,7 +255,7 @@ async function doRegister() {
   state.session = { id: inserted.id, username: inserted.username, role: 'vendedor', nombre: inserted.nombre };
   localStorage.setItem('festivalUvaSession', JSON.stringify(state.session));
   state.authError = '';
-  window.location.replace('vendedor.html');
+  window.location.replace('/pages/vendedor.html');
 }
 
 function logout() {
