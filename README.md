@@ -6,12 +6,13 @@ Aplicación web estática para administrar vendedores, productos y ventas del Fe
 
 ```text
 .
-├── index.html              # Inicio de sesión y registro
-├── admin.html              # Panel de administración
-├── vendedor.html           # Panel del vendedor
-├── *.js                    # Lógica de cada pantalla y núcleo compartido
-├── *.css                   # Estilos compartidos y específicos
-├── imagen/logo.jpg         # Identidad visual
+├── public/                 # Todo lo que Netlify sirve
+│   ├── index.html          # Inicio de sesión y registro
+│   ├── admin.html          # Panel de administración
+│   ├── vendedor.html       # Panel del vendedor
+│   ├── *.js                # Lógica de cada pantalla y núcleo compartido
+│   ├── *.css               # Estilos compartidos y específicos
+│   └── imagen/logo.jpg     # Identidad visual
 ├── database/               # Scripts SQL para preparar Supabase
 └── netlify.toml            # Configuración de publicación en Netlify
 ```
@@ -37,7 +38,7 @@ Si ya existe un remoto llamado `origin`, actualízalo con `git remote set-url or
 2. Elige GitHub y autoriza el repositorio `aglprogamer-byte/FeriaUva`.
 3. Usa estos valores de configuración:
    - **Build command:** vacío
-   - **Publish directory:** `.`
+   - **Publish directory:** `public`
 4. Selecciona **Deploy site**.
 
 Cada `git push` a `main` generará un nuevo despliegue automáticamente.
@@ -48,14 +49,14 @@ Cada `git push` a `main` generará un nuevo despliegue automáticamente.
 2. Ejecuta [`database/supabase-rls-fix.sql`](database/supabase-rls-fix.sql) para crear o actualizar las políticas y funciones usadas por la aplicación.
 3. Usa [`database/eliminar-vendedor-prueba.sql`](database/eliminar-vendedor-prueba.sql) solo si necesitas eliminar el usuario de prueba.
 
-La aplicación usa la URL y la clave pública `anon` de Supabase desde `app-core.js`. Esa clave puede aparecer en el navegador; la protección debe hacerse mediante RLS, políticas y funciones SQL. Nunca subas una `service_role` key, contraseñas ni archivos `.env` al repositorio.
+La aplicación usa la URL y la clave pública `anon` de Supabase desde `public/app-core.js`. Esa clave puede aparecer en el navegador; la protección debe hacerse mediante RLS, políticas y funciones SQL. Nunca subas una `service_role` key, contraseñas ni archivos `.env` al repositorio.
 
 ## Ejecutar localmente
 
-Puedes abrir `index.html` directamente para revisar la interfaz. Para probarlo con un servidor local, usa cualquier servidor estático, por ejemplo:
+Puedes abrir `public/index.html` directamente para revisar la interfaz. Para probarlo con un servidor local, usa cualquier servidor estático, por ejemplo:
 
 ```powershell
-npx serve .
+npx serve public
 ```
 
 Luego abre la URL que indique el comando.
