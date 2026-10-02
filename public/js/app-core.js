@@ -555,7 +555,7 @@ function historyStatsHtml(ventas) {
 function historyChartsHtml(prefix) {
   return `
   <div class="grid2">
-    <div class="card"><h3>Ventas por día (unidades)</h3><div class="chart-box"><canvas id="${prefix}HistoryUnits"></canvas></div></div>
+    <div class="card"><h3>Unidades vendidas por producto</h3><div class="chart-box"><canvas id="${prefix}HistoryUnits"></canvas></div></div>
     <div class="card"><h3>Ingresos y ganancias por día</h3><div class="chart-box"><canvas id="${prefix}HistoryRevenue"></canvas></div></div>
     <div class="card"><h3>Recaudo por medio de pago</h3><div class="chart-box"><canvas id="${prefix}HistoryPayments"></canvas></div></div>
   </div>`;
@@ -564,10 +564,18 @@ function historyChartsHtml(prefix) {
 function drawHistoryCharts(ventas, prefix) {
   const dates = Object.keys(ventas).sort();
   const daily = dates.map(date => ventas[date]);
+  const productUnits = new Map();
+  daily.forEach(day => day.items.forEach(item => {
+    const key = item.productId || item.nombre;
+    const product = productUnits.get(key) || { nombre: item.nombre, unidades: 0 };
+    product.unidades += item.unidades;
+    productUnits.set(key, product);
+  }));
+  const products = [...productUnits.values()].sort((a, b) => b.unidades - a.unidades);
   makeChart(`${prefix}HistoryUnits`, 'bar', {
-    labels: dates.map(fmtDate),
-    datasets: [{ label: 'Unidades vendidas', data: daily.map(day => day.totalUnidades), backgroundColor: '#8C3B58' }]
-  });
+    labels: products.map(product => product.nombre),
+    datasets: [{ label: 'Unidades vendidas', data: products.map(product => product.unidades), backgroundColor: '#8C3B58' }]
+  }, { indexAxis: 'y' });
   makeChart(`${prefix}HistoryRevenue`, 'bar', {
     labels: dates.map(fmtDate),
     datasets: [
