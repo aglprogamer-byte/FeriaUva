@@ -308,7 +308,10 @@ async function renderVendedor() {
 
   if (state.vendedorTab === 'productos') bindProductos(vendedorId, products);
   if (state.vendedorTab === 'registro' && products.length > 0) bindRegistro(vendedorId, products, ventas);
-  if (state.vendedorTab === 'historial') bindHistorial(vendedorId, Object.keys(ventas).length > 0);
+  if (state.vendedorTab === 'historial') {
+    bindHistorial(vendedorId, Object.keys(ventas).length > 0);
+    drawHistoryCharts(ventas, 'vendor');
+  }
   if (state.vendedorTab === 'resumen') drawResumenChart(ventas);
 }
 
@@ -520,12 +523,64 @@ function vendedorHistorialHtml(ventas) {
   }).join('');
   return `
   <div class="section-title"><h2>Historial de ventas</h2><button class="btn btn-danger btn-sm" id="btnClearHistory">Borrar historial</button></div>
+  ${historyStatsHtml(ventas)}
+  ${historyChartsHtml('vendor')}
   <div class="card table-wrap">
     <table>
       <thead><tr><th>Día</th><th>Unidades</th><th>Ingreso</th><th>Ganancia</th><th>Efectivo</th><th>Transferencia</th></tr></thead>
       <tbody>${rows}<tr class="totals"><td>Total</td><td>${fmtNum(tU)}</td><td>${fmtCOP(tI)}</td><td>${fmtCOP(tG)}</td><td>${fmtCOP(tE)}</td><td>${fmtCOP(tT)}</td></tr></tbody>
     </table>
   </div>`;
+}
+
+function historyStatsHtml(ventas) {
+  const totals = Object.values(ventas).reduce((sum, day) => ({
+    unidades: sum.unidades + day.totalUnidades,
+    ingreso: sum.ingreso + day.ingresoTotal,
+    ganancia: sum.ganancia + day.gananciaTotal,
+    efectivo: sum.efectivo + day.efectivo,
+    transferencia: sum.transferencia + day.transferencia,
+  }), { unidades: 0, ingreso: 0, ganancia: 0, efectivo: 0, transferencia: 0 });
+  return `
+  <div class="stat-row">
+    <div class="stat-card"><div class="lbl">Unidades vendidas</div><div class="val">${fmtNum(totals.unidades)}</div></div>
+    <div class="stat-card gold"><div class="lbl">Ingresos</div><div class="val">${fmtCOP(totals.ingreso)}</div></div>
+    <div class="stat-card leaf"><div class="lbl">Ganancias</div><div class="val">${fmtCOP(totals.ganancia)}</div></div>
+    <div class="stat-card"><div class="lbl">Total recogido</div><div class="val">${fmtCOP(totals.efectivo + totals.transferencia)}</div></div>
+    <div class="stat-card"><div class="lbl">Efectivo</div><div class="val">${fmtCOP(totals.efectivo)}</div></div>
+    <div class="stat-card"><div class="lbl">Transferencias</div><div class="val">${fmtCOP(totals.transferencia)}</div></div>
+  </div>`;
+}
+
+function historyChartsHtml(prefix) {
+  return `
+  <div class="grid2">
+    <div class="card"><h3>Ventas por día (unidades)</h3><div class="chart-box"><canvas id="${prefix}HistoryUnits"></canvas></div></div>
+    <div class="card"><h3>Ingresos y ganancias por día</h3><div class="chart-box"><canvas id="${prefix}HistoryRevenue"></canvas></div></div>
+    <div class="card"><h3>Recaudo por medio de pago</h3><div class="chart-box"><canvas id="${prefix}HistoryPayments"></canvas></div></div>
+  </div>`;
+}
+
+function drawHistoryCharts(ventas, prefix) {
+  const dates = Object.keys(ventas).sort();
+  const daily = dates.map(date => ventas[date]);
+  makeChart(`${prefix}HistoryUnits`, 'bar', {
+    labels: dates.map(fmtDate),
+    datasets: [{ label: 'Unidades vendidas', data: daily.map(day => day.totalUnidades), backgroundColor: '#8C3B58' }]
+  });
+  makeChart(`${prefix}HistoryRevenue`, 'bar', {
+    labels: dates.map(fmtDate),
+    datasets: [
+      { label: 'Ingresos', data: daily.map(day => day.ingresoTotal), backgroundColor: '#6B2357' },
+      { label: 'Ganancias', data: daily.map(day => day.gananciaTotal), backgroundColor: '#5B7553' }
+    ]
+  }, { scales: { y: { ticks: { callback: value => fmtCOP(value) } } } });
+  const efectivo = daily.reduce((total, day) => total + day.efectivo, 0);
+  const transferencia = daily.reduce((total, day) => total + day.transferencia, 0);
+  makeChart(`${prefix}HistoryPayments`, 'doughnut', {
+    labels: ['Efectivo', 'Transferencia'],
+    datasets: [{ data: [efectivo, transferencia], backgroundColor: ['#C9973B', '#6B2357'] }]
+  });
 }
 
 function bindHistorial(vendedorId, hasHistory) {
@@ -622,7 +677,11 @@ async function renderAdmin() {
   if (state.adminTab === 'detalle') c.innerHTML = adminDetalleHtml(data);
 
   if (state.adminTab === 'graficas') drawAdminCharts(data);
-  if (state.adminTab === 'detalle') bindDetalle(data);
+  if (state.adminTab === 'detalle') {
+    bindDetalle(data);
+    const selected = state.adminSelected || data[0].username;
+    drawHistoryCharts(data.find(v => v.username === selected).ventas, 'admin');
+  }
 }
 
 function adminVendedoresHtml(data) {
@@ -716,12 +775,8 @@ function adminDetalleHtml(data) {
     <label class="first">Selecciona un vendedor</label>
     <select id="selVendedor" class="vendedor-select">${data.map(v => `<option value="${v.username}" ${v.username === selected ? 'selected' : ''}>${v.nombre}</option>`).join('')}</select>
   </div>
-  <div class="stat-row">
-    <div class="stat-card gold"><div class="lbl">Ingreso</div><div class="val">${fmtCOP(d.ingreso)}</div></div>
-    <div class="stat-card leaf"><div class="lbl">Ganancia</div><div class="val">${fmtCOP(d.ganancia)}</div></div>
-    <div class="stat-card"><div class="lbl">Unidades</div><div class="val">${fmtNum(d.unidades)}</div></div>
-    <div class="stat-card"><div class="lbl">Efectivo / Transf.</div><div class="val" style="font-size:16px;">${fmtCOP(d.efectivo)} · ${fmtCOP(d.transferencia)}</div></div>
-  </div>
+  ${historyStatsHtml(d.ventas)}
+  ${historyChartsHtml('admin')}
   <div class="card">
     <h3>Productos (${d.products.length})</h3>
     ${d.products.length === 0 ? `<div class="empty">Este vendedor no ha registrado productos.</div>` :
@@ -750,4 +805,3 @@ function bindDetalle(data) {
   state.loading = false;
   render();
 })();
-
