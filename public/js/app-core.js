@@ -137,6 +137,9 @@ const state = {
   vendedorTab: 'productos',
   adminTab: 'vendedores',
   adminSelected: null,
+  adminData: null,
+  adminDataPromise: null,
+  adminLoadError: false,
   regDate: todayStr(),
   loading: true,
   initError: null,
@@ -284,8 +287,6 @@ function topbarHtml() {
    ============================================================ */
 async function renderVendedor() {
   const vendedorId = state.session.id;
-  const products = await getProducts(vendedorId);
-  const ventas = await getVentas(vendedorId);
   const tabs = [
     ['productos', 'Mis productos'],
     ['registro', 'Registro del día'],
@@ -295,12 +296,14 @@ async function renderVendedor() {
     <div class="app-shell">
       ${topbarHtml()}
       <div class="nav">${tabs.map(([k, l]) => `<button class="nav-btn ${state.vendedorTab === k ? 'active' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>
-      <div class="content" id="vContent"></div>
+      <div class="content" id="vContent">${dataLoadingSkeleton('Cargando tus datos', 'Estamos preparando tus productos y ventas.')}</div>
     </div>`;
   document.getElementById('btnLogout').onclick = logout;
   document.querySelectorAll('.nav-btn').forEach(b => b.onclick = () => { state.vendedorTab = b.dataset.tab; render(); });
 
+  const [products, ventas] = await Promise.all([getProducts(vendedorId), getVentas(vendedorId)]);
   const c = document.getElementById('vContent');
+  if (!c.isConnected) return;
   if (state.vendedorTab === 'productos') c.innerHTML = vendedorProductosHtml(products);
   if (state.vendedorTab === 'registro') c.innerHTML = vendedorRegistroHtml(products, ventas);
   if (state.vendedorTab === 'historial') c.innerHTML = vendedorHistorialHtml(ventas);
@@ -648,17 +651,82 @@ function drawResumenChart(ventas) {
    ADMIN APP
    ============================================================ */
 async function getAllVendedoresData() {
-  const { data: vendedoresRows, error } = await sb.from('usuarios').select('*').eq('rol', 'vendedor').order('nombre', { ascending: true });
-  if (error) { console.error('getAllVendedoresData', error); return []; }
-  const data = [];
-  for (const v of (vendedoresRows || [])) {
-    const products = await getProducts(v.id);
-    const ventas = await getVentas(v.id);
+  const { data: vendedoresRows, error } = await sb.from('usuarios').select('id, username, nombre').eq('rol', 'vendedor').order('nombre', { ascending: true });
+  if (error) throw error;
+  if (!vendedoresRows?.length) return [];
+
+  const vendedorIds = vendedoresRows.map(v => v.id);
+  const [productsResult, ventasResult] = await Promise.all([
+    sb.from('productos').select('id, vendedor_id, nombre, precio_venta, ganancia').in('vendedor_id', vendedorIds).eq('activo', true).order('created_at', { ascending: true }),
+    sb.from('ventas').select('id, vendedor_id, fecha, efectivo, transferencia, ingreso_total, ganancia_total, total_unidades, registrado_en').in('vendedor_id', vendedorIds).order('fecha', { ascending: true }),
+  ]);
+  if (productsResult.error) throw productsResult.error;
+  if (ventasResult.error) throw ventasResult.error;
+
+  const ventasRows = ventasResult.data || [];
+  const ventaIds = ventasRows.map(v => v.id);
+  let itemsRows = [];
+  if (ventaIds.length) {
+    const { data, error: itemsError } = await sb.from('venta_items')
+      .select('venta_id, producto_id, nombre_producto, unidades, precio_venta, ganancia')
+      .in('venta_id', ventaIds);
+    if (itemsError) throw itemsError;
+    itemsRows = data || [];
+  }
+
+  const productsByVendor = new Map(vendedorIds.map(id => [id, []]));
+  (productsResult.data || []).forEach(p => productsByVendor.get(p.vendedor_id).push({
+    id: p.id, nombre: p.nombre, precioVenta: Number(p.precio_venta), ganancia: Number(p.ganancia)
+  }));
+  const itemsBySale = new Map();
+  itemsRows.forEach(item => {
+    if (!itemsBySale.has(item.venta_id)) itemsBySale.set(item.venta_id, []);
+    itemsBySale.get(item.venta_id).push({
+      productId: item.producto_id, nombre: item.nombre_producto, unidades: item.unidades,
+      precioVenta: Number(item.precio_venta), ganancia: Number(item.ganancia)
+    });
+  });
+  const ventasByVendor = new Map(vendedorIds.map(id => [id, {}]));
+  ventasRows.forEach(v => {
+    ventasByVendor.get(v.vendedor_id)[v.fecha] = {
+      items: itemsBySale.get(v.id) || [],
+      efectivo: Number(v.efectivo),
+      transferencia: Number(v.transferencia),
+      ingresoTotal: Number(v.ingreso_total),
+      gananciaTotal: Number(v.ganancia_total),
+      totalUnidades: v.total_unidades,
+      registradoEn: v.registrado_en,
+    };
+  });
+
+  return vendedoresRows.map(v => {
+    const products = productsByVendor.get(v.id);
+    const ventas = ventasByVendor.get(v.id);
     let ingreso = 0, ganancia = 0, unidades = 0, efectivo = 0, transferencia = 0, dias = 0;
     Object.values(ventas).forEach(day => { ingreso += day.ingresoTotal; ganancia += day.gananciaTotal; unidades += day.totalUnidades; efectivo += day.efectivo; transferencia += day.transferencia; dias++; });
-    data.push({ id: v.id, username: v.username, nombre: v.nombre, products, ventas, ingreso, ganancia, unidades, efectivo, transferencia, dias });
-  }
-  return data;
+    return { id: v.id, username: v.username, nombre: v.nombre, products, ventas, ingreso, ganancia, unidades, efectivo, transferencia, dias };
+  });
+}
+
+function dataLoadingSkeleton(title, subtitle) {
+  return `
+    <div class="section-title"><h2>${title}</h2></div>
+    <div class="section-sub">${subtitle}</div>
+    <div class="stat-row" aria-hidden="true">
+      ${Array.from({ length: 3 }, () => '<div class="skeleton-card"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line-short"></span></div>').join('')}
+    </div>
+    <div class="card skeleton-list" aria-hidden="true">
+      ${Array.from({ length: 4 }, () => '<div class="skeleton-row"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line-short"></span></div>').join('')}
+    </div>
+    <p class="loading-status" role="status">Cargando información, esto puede tardar unos segundos…</p>`;
+}
+
+function showAdminLoadError(container) {
+  container.innerHTML = `<div class="card"><div class="msg msg-error">No se pudo cargar la información de los vendedores. Revisa tu conexión e inténtalo de nuevo.</div><button class="btn btn-primary" id="btnRetryData">Intentar de nuevo</button></div>`;
+  document.getElementById('btnRetryData').onclick = () => {
+    state.adminLoadError = false;
+    render();
+  };
 }
 
 async function renderAdmin() {
@@ -669,14 +737,39 @@ async function renderAdmin() {
       <div class="nav">${tabs.map(([k, l]) => `<button class="nav-btn ${state.adminTab === k ? 'active' : ''}" data-tab="${k}">${l}</button>`).join('')}
         <button class="nav-btn" id="btnRefresh" style="margin-left:auto;color:var(--wine);">↻ Actualizar datos</button>
       </div>
-      <div class="content" id="aContent"><div class="loading">Cargando información de los vendedores…</div></div>
+      <div class="content" id="aContent"></div>
     </div>`;
   document.getElementById('btnLogout').onclick = logout;
   document.querySelectorAll('.nav-btn[data-tab]').forEach(b => b.onclick = () => { state.adminTab = b.dataset.tab; render(); });
-  document.getElementById('btnRefresh').onclick = render;
+  document.getElementById('btnRefresh').onclick = () => {
+    if (state.adminDataPromise) return;
+    state.adminData = null;
+    state.adminLoadError = false;
+    render();
+  };
 
-  const data = await getAllVendedoresData();
   const c = document.getElementById('aContent');
+  let data = state.adminData;
+  if (!data) {
+    if (state.adminLoadError) {
+      showAdminLoadError(c);
+      return;
+    }
+    c.innerHTML = dataLoadingSkeleton('Cargando vendedores', 'Estamos reuniendo los productos y las ventas del festival.');
+    if (!state.adminDataPromise) state.adminDataPromise = getAllVendedoresData();
+    try {
+      data = await state.adminDataPromise;
+      state.adminData = data;
+    } catch (error) {
+      console.error('getAllVendedoresData', error);
+      state.adminLoadError = true;
+      if (c.isConnected) showAdminLoadError(c);
+      return;
+    } finally {
+      state.adminDataPromise = null;
+    }
+  }
+  if (!c.isConnected) return;
   if (data.length === 0) { c.innerHTML = `<div class="section-title"><h2>Sin vendedores todavía</h2></div><div class="card"><div class="empty">Cuando los vendedores creen su cuenta y registren ventas, la información aparecerá aquí.</div></div>`; return; }
 
   if (state.adminTab === 'vendedores') c.innerHTML = adminVendedoresHtml(data);

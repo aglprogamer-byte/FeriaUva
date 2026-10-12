@@ -739,6 +739,77 @@ tr.totals td {
     text-align: center;
 }
 
+.skeleton-card,
+.skeleton-list {
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-md);
+    background: rgba(255, 253, 249, .78);
+    box-shadow: var(--sombra-sm);
+}
+
+.skeleton-card {
+    display: grid;
+    min-height: 116px;
+    align-content: center;
+    gap: 14px;
+    padding: 20px;
+}
+
+.skeleton-line {
+    display: block;
+    width: 68%;
+    height: 13px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #eee6da 25%, #f8f3ea 45%, #eee6da 65%);
+    background-size: 250% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-line-short {
+    width: 42%;
+    height: 22px;
+}
+
+.skeleton-list {
+    display: grid;
+    gap: 0;
+    padding: 10px 20px;
+}
+
+.skeleton-row {
+    display: flex;
+    min-height: 56px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-bottom: 1px solid var(--borde);
+}
+
+.skeleton-row:last-child {
+    border-bottom: 0;
+}
+
+.skeleton-row .skeleton-line {
+    width: 35%;
+}
+
+.skeleton-row .skeleton-line-short {
+    width: 18%;
+}
+
+.loading-status {
+    margin: 18px 0;
+    color: var(--tinta-soft);
+    font-size: 13px;
+    text-align: center;
+}
+
+@keyframes skeleton-shimmer {
+    to {
+        background-position: -250% 0;
+    }
+}
+
 select.vendedor-select {
     max-width: 360px;
 }
