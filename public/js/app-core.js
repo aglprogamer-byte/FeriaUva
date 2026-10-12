@@ -149,7 +149,8 @@ const charts = {}; // canvasId -> Chart instance
 const app = document.getElementById('app');
 
 function grapesLogo(size = 30) {
-  return `<img class="grapes-logo" src="/assets/images/logo.jpg" width="${size}" height="${size}" alt="Feria de la Uva Villa del Rosario 2026">`;
+  const logoPath = APP_PAGE === 'auth' ? 'assets/images/logo.jpg' : '/assets/images/logo.jpg';
+  return `<img class="grapes-logo" src="${logoPath}" width="${size}" height="${size}" alt="Feria de la Uva Villa del Rosario 2026">`;
 }
 
 /* ============================================================
@@ -178,37 +179,61 @@ function renderAuth() {
   const t = state.authTab;
   app.innerHTML = `
   <div class="auth-shell">
-    <div class="auth-card">
-      <div class="brand">
-        ${grapesLogo(38)}
-        <div>
-          <span>Festival de la Uva</span>
-          <h1>Control de Ventas</h1>
+    <div class="auth-layout">
+      <section class="auth-story" aria-label="Feria de la Uva de Villa del Rosario">
+        <div class="auth-story-brand">
+          ${grapesLogo(42)}
+          <div><span>Festival de la Uva</span><strong>Villa del Rosario</strong></div>
         </div>
-      </div>
-      <div class="tabs">
-        <button class="tab-btn ${t === 'login' ? 'active' : ''}" id="tabLogin">Ingresar</button>
-        <button class="tab-btn ${t === 'register' ? 'active' : ''}" id="tabRegister">Crear cuenta de vendedor</button>
-      </div>
-      ${t === 'login' ? `
-        <label class="first">Usuario</label>
-        <input type="text" id="loginUser" placeholder="tu usuario" autocomplete="username">
-        <label>Contraseña</label>
-        <input type="password" id="loginPass" placeholder="tu contraseña" autocomplete="current-password">
-        <button class="btn btn-primary" id="btnLogin">Ingresar</button>
-      ` : `
-        <label class="first">Nombre del vendedor o del puesto</label>
-        <input type="text" id="regNombre" placeholder="Ej: Dulces de la Abuela">
-        <label>Usuario</label>
-        <input type="text" id="regUser" placeholder="crea un usuario" autocomplete="username">
-        <label>Contraseña</label>
-        <input type="password" id="regPass" placeholder="crea una contraseña" autocomplete="new-password">
-        <label>Confirmar contraseña</label>
-        <input type="password" id="regPass2" placeholder="repite la contraseña" autocomplete="new-password">
-        <button class="btn btn-primary" id="btnRegister">Crear cuenta</button>
-      `}
-      ${state.authError ? `<div class="msg msg-error">${state.authError}</div>` : ''}
-      ${state.initError ? `<div class="msg msg-error">No se pudo conectar con la base de datos: ${state.initError}</div>` : ''}
+        <svg class="auth-grapes" viewBox="0 0 120 170" aria-hidden="true">
+          <path d="M59 3c3 17-8 25-2 39m4-13c-20-16-37-1-17 11 9 5 15 1 17-11zm8 3c13-20 33-10 17 7-9 8-17 5-17-7zm-14 19C34 34 28 53 49 55c11 1 15-6 8-16z" fill="#758052" stroke="#85845a" stroke-width="1.4"/>
+          <path d="M60 39c-4 13-9 18-8 27m16-18c8 7 12 11 12 20m-28-4c-5 7-9 10-9 16m38-11c8 6 11 10 12 17" fill="none" stroke="#68764b" stroke-width="2" stroke-linecap="round"/>
+          <g fill="#4a2346" stroke="#bd9847" stroke-width="1">
+            <circle cx="54" cy="75" r="11"/><circle cx="75" cy="75" r="11"/><circle cx="43" cy="96" r="11"/><circle cx="64" cy="96" r="11"/><circle cx="85" cy="96" r="11"/><circle cx="54" cy="117" r="11"/><circle cx="75" cy="117" r="11"/><circle cx="64" cy="138" r="11"/>
+          </g>
+          <g fill="rgba(255,255,232,.6)">
+            <circle cx="50" cy="71" r="2.5"/><circle cx="71" cy="71" r="2.5"/><circle cx="39" cy="92" r="2.5"/><circle cx="60" cy="92" r="2.5"/><circle cx="81" cy="92" r="2.5"/><circle cx="50" cy="113" r="2.5"/><circle cx="71" cy="113" r="2.5"/><circle cx="60" cy="134" r="2.5"/>
+          </g>
+        </svg>
+        <div class="auth-story-copy">
+          <h1>Los vendedores son el alma del Festival de la Uva, llevando tradición, emprendimiento y alegría a cada visitante.</h1>
+          <p>Feria de la Uva de Villa del Rosario · 2026</p>
+        </div>
+        <img class="auth-church" src="assets/images/villa-del-rosario-login.png" alt="Ilustración de la iglesia histórica de Villa del Rosario y sus palmas">
+      </section>
+      <section class="auth-card" aria-label="${t === 'login' ? 'Iniciar sesión' : 'Crear cuenta de vendedor'}">
+        <div class="auth-form-content">
+          <div class="auth-heading">
+            <h2>${t === 'login' ? 'Bienvenido' : 'Únete como vendedor'}</h2>
+            <p>${t === 'login' ? 'Ingresa a la plataforma del festival.' : 'Crea tu cuenta para gestionar tus ventas.'}</p>
+          </div>
+          <div class="tabs">
+            <button type="button" class="tab-btn ${t === 'login' ? 'active' : ''}" id="tabLogin">Ingresar</button>
+            <button type="button" class="tab-btn ${t === 'register' ? 'active' : ''}" id="tabRegister">Crear cuenta de vendedor</button>
+          </div>
+          <div class="auth-fields">
+          ${t === 'login' ? `
+            <label class="first" for="loginUser">Usuario</label>
+            <input type="text" id="loginUser" placeholder="tu usuario" autocomplete="username">
+            <label for="loginPass">Contraseña</label>
+            <input type="password" id="loginPass" placeholder="tu contraseña" autocomplete="current-password">
+            <button type="button" class="btn btn-primary" id="btnLogin">Ingresar</button>
+          ` : `
+            <label class="first" for="regNombre">Nombre del vendedor o del puesto</label>
+            <input type="text" id="regNombre" placeholder="Ej: Dulces de la Abuela">
+            <label for="regUser">Usuario</label>
+            <input type="text" id="regUser" placeholder="crea un usuario" autocomplete="username">
+            <label for="regPass">Contraseña</label>
+            <input type="password" id="regPass" placeholder="crea una contraseña" autocomplete="new-password">
+            <label for="regPass2">Confirmar contraseña</label>
+            <input type="password" id="regPass2" placeholder="repite la contraseña" autocomplete="new-password">
+            <button type="button" class="btn btn-primary" id="btnRegister">Crear cuenta</button>
+          `}
+          ${state.authError ? `<div class="msg msg-error" role="alert">${state.authError}</div>` : ''}
+          ${state.initError ? `<div class="msg msg-error" role="alert">No se pudo conectar con la base de datos: ${state.initError}</div>` : ''}
+          </div>
+        </div>
+      </section>
     </div>
   </div>`;
 

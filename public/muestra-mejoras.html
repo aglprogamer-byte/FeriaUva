@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#381335">
+  <title>Muestra de mejoras · Festival de la Uva</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --wine: #381335;
+      --wine-soft: #4A154B;
+      --gold: #D4AF37;
+      --green: #557356;
+      --cream: #fbf7ef;
+      --paper: #fffdf9;
+      --ink: #292124;
+      --muted: #766b6a;
+      --line: rgba(74, 21, 75, .14);
+      --shadow: 0 12px 34px rgba(56, 19, 53, .09);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background: var(--cream);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, select, input { font: inherit; }
+    button { cursor: pointer; }
+    .topbar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 82px;
+      padding: 14px max(24px, calc((100vw - 1180px) / 2));
+      color: white;
+      background: linear-gradient(110deg, #381335, #4A154B 72%, #642451);
+      overflow: hidden;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; }
+    .brand-name { font-family: Georgia, serif; font-size: 19px; font-weight: 700; }
+    .brand-caption { margin-top: 3px; color: #e6c987; font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+    .topbar-right { display: flex; align-items: center; gap: 18px; color: #eadfe8; font-size: 13px; }
+    .role { padding: 7px 11px; border: 1px solid rgba(255,255,255,.22); border-radius: 20px; }
+    .topbar-vine { position: absolute; top: -27px; right: 4%; width: 205px; height: 132px; opacity: .42; pointer-events: none; }
+    .topbar-vine path, .topbar-vine ellipse { fill: none; stroke: #e6c987; stroke-width: 2; }
+    .topbar-vine .vine-leaf { fill: rgba(183,207,160,.16); stroke: #c5d1a4; }
+    .topbar-vine .grape { fill: rgba(212,175,55,.36); stroke: #e6c987; stroke-width: 1.2; }
+    .preview-switcher { display: flex; align-items: center; gap: 8px; padding: 10px max(18px, calc((100vw - 1180px) / 2)); border-bottom: 1px solid var(--line); background: linear-gradient(100deg,#381335,#4A154B); }
+    .preview-label { margin-right: 5px; color: #f2e4b8; font-size: 11px; font-weight: 700; }
+    .preview-button { min-height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; color: white; background: transparent; font-size: 11px; font-weight: 700; }
+    .preview-button:hover { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.1); }
+    .preview-button.active { color: #381335; background: #D4AF37; }
+    .app-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100vh - 82px); }
+    .sidebar { position: sticky; top: 0; display: flex; height: calc(100vh - 82px); min-height: 420px; flex-direction: column; padding: 24px 15px; overflow: hidden; border-right: 1px solid var(--line); background: rgba(255,253,249,.76); backdrop-filter: blur(16px); }
+    .sidebar-label { margin: 0 12px 12px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .sidebar-vine { position: absolute; right: -20px; bottom: 70px; width: 155px; opacity: .13; pointer-events: none; }
+    .sidebar-vine path, .sidebar-vine ellipse { fill: none; stroke: var(--green); stroke-width: 2; }
+    .sidebar-vine .leaf { fill: rgba(85,115,86,.12); }
+    .sidebar-vine .berry { fill: rgba(100,36,81,.16); stroke: var(--wine-soft); stroke-width: 1; }
+    main { width: min(1180px, calc(100% - 56px)); margin: 32px auto 60px; }
+    .demo-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: min(1180px, calc(100% - 32px));
+      margin: 14px auto;
+      padding: 13px 16px;
+      border: 1px solid #ead9ad;
+      border-radius: 12px;
+      color: #684d1b;
+      background: rgba(255,248,230,.92);
+      backdrop-filter: blur(14px);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .demo-icon { display: grid; width: 26px; height: 26px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #f0dfb5; font-weight: 800; }
+    .heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+    h1, h2, h3, p { margin: 0; }
+    h1, h2, h3 { color: var(--wine); font-family: Georgia, serif; }
+    h1 { font-size: clamp(27px, 4vw, 36px); letter-spacing: -.03em; }
+    .subtitle { margin-top: 7px; color: var(--muted); font-size: 14px; }
+    .date-stamp { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--paper);
+    }
+    .field { position: relative; flex: 1 1 210px; }
+    .field input, .toolbar select {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      outline: none;
+      color: var(--ink);
+      background: white;
+      font-size: 13px;
+    }
+    .field input:focus, .toolbar select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,.15); }
+    .toolbar select { flex: 0 1 205px; }
+    .button {
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 9px;
+      color: white;
+      background: var(--wine-soft);
+      font-size: 13px;
+      font-weight: 700;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .button:hover { transform: translateY(-1px); background: var(--wine); }
+    .main-nav { display: grid; gap: 5px; }
+    .nav-button { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 9px; color: var(--muted); background: transparent; font-size: 13px; font-weight: 700; text-align: left; }
+    .nav-button:hover { color: var(--wine); background: #f8f2e9; }
+    .nav-button.active { color: var(--wine); background: #f1e6d4; }
+    .nav-icon { display: grid; width: 24px; height: 24px; flex: 0 0 auto; place-items: center; border-radius: 7px; color: var(--wine-soft); background: rgba(100,36,81,.08); }
+    .nav-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+    .nav-button.active .nav-icon { color: white; background: var(--wine-soft); }
+    .nav-button.active .nav-icon svg { animation: icon-float 2.2s ease-in-out infinite; }
+    .nav-button:hover .nav-icon svg { animation: icon-bounce .45s ease both; }
+    @keyframes icon-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+    @keyframes icon-bounce { 0%, 100% { transform: translateY(0) scale(1); } 45% { transform: translateY(-3px) scale(1.08); } }
+    .sidebar-note { margin: auto 8px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .page-view[hidden] { display: none; }
+    .preview-surface[hidden] { display: none !important; }
+    .view-heading { margin-bottom: 18px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .stat, .panel { border: 1px solid rgba(255,255,255,.86); border-radius: 15px; background: rgba(255,253,249,.76); backdrop-filter: blur(16px); box-shadow: var(--shadow); }
+    .stat { position: relative; min-height: 130px; padding: 18px; overflow: hidden; }
+    .stat::after { position: absolute; right: -22px; bottom: -40px; width: 100px; height: 100px; border-radius: 50%; background: rgba(212,175,55,.09); content: ""; }
+    .stat-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+    .stat-value { margin-top: 14px; color: var(--wine); font-size: clamp(20px, 2.6vw, 29px); font-weight: 800; letter-spacing: -.04em; }
+    .stat-note { margin-top: 7px; color: var(--green); font-size: 11px; font-weight: 700; }
+    .stat:nth-child(2) .stat-value { color: #93671e; }
+    .stat:nth-child(3) .stat-value { color: var(--green); }
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(260px, .85fr); gap: 18px; }
+    .dashboard-charts { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .dashboard-charts > .panel { min-width: 0; padding: 18px; }
+    .panel { padding: 20px; }
+    .panel-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    h2 { font-size: 19px; }
+    h3 { font-size: 18px; }
+    .panel-note { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .updated-pill { padding: 6px 9px; border-radius: 20px; color: var(--green); background: #eaf1e8; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .seller-list { display: grid; gap: 15px; }
+    .seller { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 11px; }
+    .rank { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 9px; color: var(--wine-soft); background: #f4ebf1; font-size: 12px; font-weight: 800; }
+    .seller-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+    .seller-name { overflow: hidden; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .seller-units { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .progress { height: 6px; overflow: hidden; border-radius: 9px; background: #f1e6d4; }
+    .progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold), var(--wine-soft)); }
+    .seller-total { color: var(--wine); font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .trend-wrap { height: 196px; }
+    .trend-wrap svg { width: 100%; height: 100%; overflow: visible; }
+    .chart-grid { stroke: #eee6dc; stroke-width: 1; }
+    .chart-line { fill: none; stroke: var(--wine-soft); stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+    .chart-area { fill: url(#areaFill); }
+    .chart-dot { fill: var(--gold); stroke: var(--paper); stroke-width: 3; }
+    .chart-label { fill: #8a7d79; font-family: system-ui, sans-serif; font-size: 10px; }
+    .product-list { display: grid; gap: 15px; margin-top: 20px; }
+    .product-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+    .product-label { display: flex; align-items: center; gap: 9px; }
+    .product-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
+    .product-row:nth-child(2) .product-dot { background: var(--wine-soft); }
+    .product-row:nth-child(3) .product-dot { background: var(--green); }
+    .product-row:nth-child(4) .product-dot { background: #b87942; }
+    .product-qty { color: var(--muted); font-weight: 700; }
+    .table-panel { margin-top: 18px; padding: 0; overflow: hidden; }
+    .table-title { padding: 18px 20px; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    th { padding: 11px 20px; color: var(--muted); background: #f8f2e9; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
+    td { padding: 13px 20px; border-top: 1px solid var(--line); font-size: 12px; }
+    td:first-child { font-weight: 700; }
+    .empty { padding: 25px; color: var(--muted); text-align: center; font-size: 13px; }
+    .export-actions { display: flex; align-items: center; gap: 6px; }
+    .export-button { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid rgba(74,21,75,.24); border-radius: 8px; color: #4A154B; background: rgba(255,255,255,.88); font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .export-button.pdf { border-color: rgba(212,175,55,.65); color: #381335; background: rgba(212,175,55,.28); }
+    .export-button:hover { border-color: #D4AF37; box-shadow: 0 3px 10px rgba(56,19,53,.12); }
+    .export-hint { margin: 0 20px 14px; color: var(--muted); font-size: 10px; }
+    .payment-content { display: grid; grid-template-columns: minmax(90px, .8fr) minmax(0,1.2fr); align-items: center; gap: 12px; }
+    .payment-donut { display: grid; width: min(100%,140px); aspect-ratio: 1; margin: auto; place-items: center; border-radius: 50%; background: conic-gradient(var(--gold) 0 var(--cash-percent,62%), var(--wine-soft) var(--cash-percent,62%) 100%); }
+    .payment-hole { display: grid; width: 58%; aspect-ratio: 1; place-items: center; border-radius: 50%; color: var(--wine); background: rgba(255,253,249,.96); font-size: 11px; font-weight: 800; text-align: center; }
+    .payment-legend { display: grid; gap: 12px; }
+    .payment-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; font-size: 11px; }
+    .payment-label { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; }
+    .payment-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
+    .payment-row.transfer .payment-dot { background: var(--wine-soft); }
+    .payment-value { color: var(--wine); font-weight: 800; }
+    .mock-chart-note { margin-top: 13px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .footnote { margin: 14px 2px; color: var(--muted); font-size: 11px; }
+    .vendor-preview { min-height: calc(100vh - 130px); padding: 32px max(22px, calc((100vw - 950px) / 2)); background: var(--cream); }
+    .vendor-preview-head { position: relative; margin-bottom: 22px; padding: 28px; overflow: hidden; border-radius: 17px; color: white; background: linear-gradient(115deg, var(--wine), #642451); }
+    .vendor-preview-head h1 { color: white; }
+    .vendor-preview-head .subtitle { color: #eadfe8; }
+    .vendor-head-art { position: absolute; top: -5px; right: 20px; width: 160px; height: 135px; opacity: .7; }
+    .vendor-head-art path, .vendor-head-art ellipse { fill: none; stroke: #e6c987; stroke-width: 2; }
+    .vendor-head-art .leaf { fill: rgba(183,207,160,.15); stroke: #c5d1a4; }
+    .vendor-head-art .berry { fill: rgba(212,175,55,.45); stroke: #e6c987; stroke-width: 1.2; }
+    .vendor-tabs { display: flex; gap: 7px; margin-bottom: 18px; padding: 7px; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+    .vendor-tab { padding: 10px 14px; border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .vendor-tab.active { color: var(--wine); background: #f1e6d4; }
+    .vendor-card { position: relative; }
+    .vendor-card::after { position: absolute; right: 12px; bottom: 8px; color: rgba(85,115,86,.16); font-family: Georgia,serif; font-size: 64px; content: "❧"; pointer-events: none; }
+    .login-preview { min-height: calc(100vh - 130px); display: grid; place-items: center; padding: 30px; overflow: hidden; background: radial-gradient(ellipse at 14% 82%, rgba(212,175,55,.16), transparent 30%), radial-gradient(ellipse at 84% 20%, rgba(131,72,127,.28), transparent 42%), linear-gradient(125deg, #260d29, #381335 48%, #4A154B); }
+    .login-card { display: grid; width: min(960px, 100%); min-height: 510px; grid-template-columns: 1.08fr .92fr; overflow: hidden; border: 1px solid rgba(255,255,255,.58); border-radius: 22px; background: var(--paper); box-shadow: 0 28px 80px rgba(0,0,0,.28); }
+    .login-art { position: relative; z-index: 1; display: flex; min-width: 0; min-height: 510px; flex-direction: column; padding: 27px 34px 20px; overflow: hidden; color: var(--wine); background: #faf9f1; }
+    .login-art::before, .login-art::after { content: none; }
+    .login-brand, .login-copy, .church-art { position: relative; z-index: 2; }
+    .login-brand { display: flex; align-items: center; gap: 10px; }
+    .login-brand img { width: 40px; height: 40px; border: 1px solid rgba(74,21,75,.13); border-radius: 50%; object-fit: cover; }
+    .login-brand span { color: #776746; font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+    .login-brand strong { display: block; margin-top: 3px; color: var(--wine); font-family: Georgia,serif; font-size: 17px; letter-spacing: 0; text-transform: none; }
+    .login-copy { max-width: 440px; margin: auto 0 0; padding-bottom: 5px; }
+    .login-copy h1 { color: var(--wine); font-family: Georgia,serif; font-size: clamp(20px,2.2vw,25px); font-style: italic; font-weight: 400; line-height: 1.35; }
+    .login-copy p { max-width: 295px; margin-top: 8px; color: #79766d; font-size: 11px; line-height: 1.5; }
+    .grape-art { position: absolute; z-index: 2; top: 7px; right: 12px; width: 112px; height: 170px; opacity: .82; filter: drop-shadow(0 4px 4px rgba(67,45,21,.1)); pointer-events: none; }
+    .grape-art .vine { fill: none; stroke: #68764b; stroke-width: 3; stroke-linecap: round; }
+    .grape-art .leaf { fill: #778550; stroke: #9a9a5e; stroke-width: 1.4; }
+    .grape-art .leaf-light { fill: #a6a06a; }
+    .grape-art .berry { fill: url(#goldGrape); stroke: #b49145; stroke-width: 1; }
+    .grape-art .berry-shine { fill: rgba(255,255,232,.68); stroke: none; }
+    .church-art { display: block; width: 100%; height: 175px; margin-top: 5px; border-radius: 4px; object-fit: cover; object-position: center 43%; opacity: .48; mix-blend-mode: multiply; mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 82%, transparent); }
+    .login-form { position: relative; display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 42px clamp(28px,4.5vw,56px); overflow: hidden; color: white; background: linear-gradient(145deg,#381335,#441744 68%,#381335); }
+    .login-form::before { content: none; }
+    .login-form h2, .login-form .subtitle, .login-form label, .login-form input, .login-form .button, .login-caption { position: relative; z-index: 1; }
+    .login-form h2 { color: white; font-size: 26px; }
+    .login-form .subtitle { margin: 7px 0 24px; color: rgba(255,255,255,.82); font-size: 12px; line-height: 1.5; }
+    .login-form label { margin: 0 0 6px; color: rgba(255,255,255,.94); font-size: 11px; font-weight: 700; }
+    .login-form input { min-height: 43px; margin-bottom: 15px; padding: 0 12px; border: 1px solid rgba(255,255,255,.75); border-radius: 9px; color: var(--ink); background: rgba(255,255,255,.97); box-shadow: 0 4px 15px rgba(24,8,25,.12); }
+    .login-form input::placeholder { color: #a9a4a8; }
+    .login-form .button { width: 100%; min-height: 42px; margin-top: 2px; border: 1px solid rgba(212,175,55,.55); color: #fff; background: linear-gradient(100deg,#381335,#2a0f2d); box-shadow: 0 8px 18px rgba(16,5,18,.2); }
+    .login-form .button:hover { background: linear-gradient(100deg,#4A154B,#381335); }
+    .login-caption { margin-top: 14px; color: rgba(255,255,255,.7); font-size: 9px; line-height: 1.5; text-align: center; }
+    @media print {
+      body { background: white; }
+      .topbar { min-height: 56px; padding: 10px 20px; color: var(--ink); background: white; border-bottom: 2px solid var(--wine); }
+      .brand-name, h1, h2, h3 { color: var(--wine); }
+      .brand-caption, .topbar-date, .role, .demo-banner, .sidebar, .toolbar, .footnote, .updated-pill, .preview-switcher, .topbar-vine { display: none !important; }
+      .app-layout { display: block; min-height: 0; }
+      main { width: 100%; margin: 18px 0; }
+      .page-view[hidden] { display: none !important; }
+      #view-dashboard, #view-vendedores { display: block !important; }
+      .stat, .panel { break-inside: avoid; box-shadow: none; }
+      .table-panel { overflow: visible; }
+      .table-scroll { overflow: visible; }
+      th, td { padding: 8px 10px; }
+      .content-grid { grid-template-columns: 1fr 1fr; }
+      button { display: none !important; }
+    }
+    @media (max-width: 820px) {
+      .app-layout { grid-template-columns: 190px minmax(0, 1fr); }
+      .sidebar { padding-right: 10px; padding-left: 10px; }
+      main { width: calc(100% - 32px); }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .content-grid { grid-template-columns: 1fr; }
+      .dashboard-charts { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .dashboard-charts > .panel:last-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 520px) {
+      .topbar { min-height: 70px; padding: 12px 16px; }
+      .brand img { width: 40px; height: 40px; }
+      .brand-name { font-size: 16px; }
+      .brand-caption { font-size: 8px; }
+      .topbar-right { gap: 0; font-size: 11px; }
+      .role { padding: 6px 8px; }
+      .topbar-date { display: none; }
+      .app-layout { display: block; min-height: 0; }
+      .sidebar { position: sticky; z-index: 2; top: 0; height: auto; min-height: 0; padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .sidebar-vine { display: none; }
+      .sidebar-label, .sidebar-note { display: none; }
+      .main-nav { display: flex; gap: 5px; overflow-x: auto; }
+      .nav-button { width: auto; min-height: 40px; flex: 0 0 auto; gap: 7px; padding: 0 10px; font-size: 12px; }
+      .nav-icon { width: 21px; height: 21px; }
+      main { width: calc(100% - 30px); margin: 18px auto 38px; }
+      .demo-banner { align-items: start; font-size: 12px; }
+      .heading { align-items: start; flex-direction: column; }
+      .stats { gap: 10px; }
+      .stat { min-height: 112px; padding: 14px; }
+      .stat-value { margin-top: 12px; font-size: 21px; }
+      .stat-label { font-size: 11px; }
+      .toolbar { align-items: stretch; }
+      .field, .toolbar select, .button { flex: 1 1 100%; }
+      .export-actions { flex-wrap: wrap; }
+      .export-actions .export-button { flex: 1 1 auto; }
+      .panel { padding: 16px; }
+      .dashboard-charts { grid-template-columns: minmax(0,1fr); }
+      .dashboard-charts > .panel:last-child { grid-column: auto; }
+      .table-title { padding: 16px; }
+      th, td { padding-right: 14px; padding-left: 14px; }
+      .preview-switcher { gap: 4px; padding: 8px 10px; overflow-x: auto; }
+      .preview-label { display: none; }
+      .preview-button { flex: 0 0 auto; padding: 0 9px; }
+      .topbar-vine { right: -65px; opacity: .25; }
+      .login-preview { min-height: calc(100vh - 120px); padding: 16px; }
+      .login-card { grid-template-columns: 1fr; }
+      .login-art { min-height: 330px; padding: 19px 22px 8px; }
+      .grape-art { top: 0; right: 4%; width: 100px; height: 150px; }
+      .login-copy { max-width: 250px; margin-top: auto; padding-top: 45px; }
+      .login-copy h1 { font-size: 21px; }
+      .login-copy p { max-width: 245px; font-size: 11px; }
+      .church-art { width: 100%; height: 90px; margin-top: 0; object-position: center 43%; opacity: .42; }
+      .login-form { padding: 29px 24px; }
+      .vendor-preview { padding: 20px 15px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      .nav-button.active .nav-icon svg, .nav-button:hover .nav-icon svg { animation: none; }
+    }
+    .topbar[hidden], .app-layout[hidden], .preview-surface[hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="mainHeader">
+    <div class="brand">
+      <img src="assets/images/logo.jpg" alt="Logo Feria de la Uva">
+      <div><div class="brand-name">Festival de la Uva</div><div class="brand-caption">Control de ventas</div></div>
+    </div>
+    <div class="topbar-right"><span class="topbar-date">Villa del Rosario · 2026</span><span class="role" id="roleBadge">Administración</span></div>
+    <svg class="topbar-vine" viewBox="0 0 210 135" aria-hidden="true">
+      <path d="M6 18c54 4 69 40 103 45 39 6 50-23 96-18M85 59c-9 24-3 45 16 66"/>
+      <path class="vine-leaf" d="M38 24c-20-17-30 2-8 12 9 4 14 0 8-12zm39 19c-4-24 17-22 14 0-2 10-9 12-14 0zm56 18c17-18 30-1 9 11-9 5-15 1-9-11zm42-12c0-24 21-22 15 0-3 10-10 11-15 0zM102 92c-20-15-29 4-7 12 9 3 14-2 7-12zm-2 28c13-14 26 1 8 10-8 4-13 0-8-10z"/>
+      <ellipse class="grape" cx="126" cy="83" rx="7" ry="8"/><ellipse class="grape" cx="139" cy="83" rx="7" ry="8"/><ellipse class="grape" cx="119" cy="96" rx="7" ry="8"/><ellipse class="grape" cx="132" cy="97" rx="7" ry="8"/><ellipse class="grape" cx="125" cy="110" rx="7" ry="8"/>
+    </svg>
+  </header>
+
+  <div class="preview-switcher" role="group" aria-label="Elegir pantalla de muestra">
+    <span class="preview-label">Vista previa:</span>
+    <button class="preview-button active" type="button" data-mode="admin">Administración</button>
+    <button class="preview-button" type="button" data-mode="vendor">Vendedor</button>
+    <button class="preview-button" type="button" data-mode="login">Inicio de sesión</button>
+  </div>
+
+  <div class="demo-banner" role="note">
+    <span class="demo-icon" aria-hidden="true">i</span>
+    <span><strong>Muestra local — datos ficticios.</strong> No hay conexión a la base de datos ni se puede guardar, editar o eliminar información. La fecha, los filtros y el CSV diario son demostrativos; los botones CSV/PDF individuales solo muestran la interfaz.</span>
+  </div>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-label">Administración</div>
+      <nav class="main-nav" aria-label="Menú de administración">
+        <button class="nav-button active" type="button" data-view="dashboard" aria-current="page"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13h7V4H4zM15 20h5v-7h-5zM15 9h5V4h-5zM4 20h7v-3H4z"/></svg></span>Resumen</button>
+        <button class="nav-button" type="button" data-view="vendedores"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20v-1.5A4.5 4.5 0 0 1 8 14h2a4.5 4.5 0 0 1 4.5 4.5V20zM16 5.5a3 3 0 0 1 0 5.8M17 14h1a3.5 3.5 0 0 1 3.5 3.5V20H17"/></svg></span>Vendedores</button>
+        <button class="nav-button" type="button" data-view="ranking"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h17M7 15l4-4 3 2 6-7"/><path d="M16 6h4v4"/></svg></span>Ranking</button>
+        <button class="nav-button" type="button" data-view="detalle"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3.5 19v-1a5.5 5.5 0 0 1 11 0v1zM17 7h4M17 12h4M17 17h4"/></svg></span>Detalle de vendedor</button>
+      </nav>
+      <div class="sidebar-note">Modo de muestra<br><strong>Solo consulta · sin cambios a los datos</strong></div>
+      <svg class="sidebar-vine" viewBox="0 0 150 190" aria-hidden="true">
+        <path d="M147 183C96 151 132 111 84 94 50 82 25 66 8 9M85 94c31-1 39-22 42-50"/>
+        <path class="leaf" d="M42 41C10 38 11 10 42 23c14 6 15 15 0 18zm28 39C39 74 49 48 75 67c12 9 10 18-5 13zm26 22c-1 27-25 30-24 2 1-13 9-17 24-2zm24-36c-22 18-40 0-17-18 11-9 20-5 17 18zm-31 70c-26-10-20-34 7-21 12 6 12 15-7 21z"/>
+        <ellipse class="berry" cx="61" cy="128" rx="8" ry="9"/><ellipse class="berry" cx="76" cy="128" rx="8" ry="9"/><ellipse class="berry" cx="54" cy="144" rx="8" ry="9"/><ellipse class="berry" cx="69" cy="145" rx="8" ry="9"/><ellipse class="berry" cx="62" cy="160" rx="8" ry="9"/>
+      </svg>
+    </aside>
+
+  <main>
+    <div class="toolbar" aria-label="Acciones del reporte diario">
+      <label class="field"><input id="reportDate" type="date" min="2026-10-07" max="2026-10-12" value="2026-10-12" aria-label="Elegir día del reporte"></label>
+      <button class="button" id="exportCsv" type="button"><span aria-hidden="true">↓</span> Descargar CSV del día</button>
+      <button class="button" id="printReport" type="button"><span aria-hidden="true">⎙</span> Imprimir día</button>
+    </div>
+
+    <section class="page-view" id="view-dashboard" data-page="dashboard" aria-labelledby="dashboard-title">
+      <div class="heading">
+        <div><h1 id="dashboard-title">Resumen</h1><p class="subtitle">Resumen y gráficas de ventas para el día seleccionado.</p></div>
+        <div class="date-stamp" id="dashboardDate"></div>
+      </div>
+      <div class="stats" aria-live="polite">
+        <article class="stat"><div class="stat-label">Vendedores con reporte</div><div class="stat-value" id="salesTotal">—</div><div class="stat-note">Para el día seleccionado</div></article>
+        <article class="stat"><div class="stat-label">Ingresos totales</div><div class="stat-value" id="incomeTotal">—</div><div class="stat-note">Efectivo + transferencias</div></article>
+        <article class="stat"><div class="stat-label">Ganancia estimada</div><div class="stat-value" id="profitTotal">—</div><div class="stat-note">Según registros de muestra</div></article>
+        <article class="stat"><div class="stat-label">Unidades vendidas</div><div class="stat-value" id="unitsTotal">—</div><div class="stat-note">Para el día seleccionado</div></article>
+      </div>
+      <div class="content-grid dashboard-charts">
+        <section class="panel" aria-labelledby="trend-title">
+          <div class="panel-head"><div><h2 id="trend-title">Ingresos por día</h2><p class="panel-note">Tendencia durante el festival</p></div><span class="updated-pill">Datos ficticios</span></div>
+          <div class="trend-wrap">
+            <svg viewBox="0 0 360 180" role="img" aria-label="Gráfica de tendencia de ingresos">
+              <defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#84345d" stop-opacity=".2"/><stop offset="100%" stop-color="#84345d" stop-opacity="0"/></linearGradient></defs>
+              <line class="chart-grid" x1="34" y1="22" x2="350" y2="22"/><line class="chart-grid" x1="34" y1="62" x2="350" y2="62"/><line class="chart-grid" x1="34" y1="102" x2="350" y2="102"/><line class="chart-grid" x1="34" y1="142" x2="350" y2="142"/>
+              <text class="chart-label" x="0" y="26">$1.2M</text><text class="chart-label" x="0" y="66">$800k</text><text class="chart-label" x="0" y="106">$400k</text><text class="chart-label" x="20" y="146">$0</text>
+              <path class="chart-area" id="trendArea"></path><path class="chart-line" id="trendLine"></path>
+              <g id="trendDots"></g><g id="trendLabels"></g>
+            </svg>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="profit-trend-title">
+          <div class="panel-head"><div><h2 id="profit-trend-title">Ganancias por día</h2><p class="panel-note">Ganancia estimada durante el festival</p></div><span class="updated-pill">Datos ficticios</span></div>
+          <div class="trend-wrap">
+            <svg viewBox="0 0 360 180" role="img" aria-label="Gráfica demostrativa de ganancias por día">
+              <defs><linearGradient id="profitAreaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#D4AF37" stop-opacity=".26"/><stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/></linearGradient></defs>
+              <line class="chart-grid" x1="34" y1="22" x2="350" y2="22"/><line class="chart-grid" x1="34" y1="62" x2="350" y2="62"/><line class="chart-grid" x1="34" y1="102" x2="350" y2="102"/><line class="chart-grid" x1="34" y1="142" x2="350" y2="142"/>
+              <text class="chart-label" x="0" y="26">$400k</text><text class="chart-label" x="0" y="66">$300k</text><text class="chart-label" x="0" y="106">$200k</text><text class="chart-label" x="20" y="146">$0</text>
+              <path class="chart-area" id="profitArea" fill="url(#profitAreaFill)"></path><path class="chart-line" id="profitLine"></path>
+              <g id="profitDots"></g><g id="profitLabels"></g>
+            </svg>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="payment-title">
+          <div class="panel-head"><div><h2 id="payment-title">Medios de pago</h2><p class="panel-note">Distribución demostrativa del día</p></div><span class="updated-pill">Simulado</span></div>
+          <div class="payment-content">
+            <div class="payment-donut" id="paymentDonut" role="img" aria-label="Gráfica ilustrativa de distribución de medios de pago"><div class="payment-hole">Pagos<br>del día</div></div>
+            <div class="payment-legend">
+              <div class="payment-row"><span class="payment-label"><i class="payment-dot"></i>Efectivo</span><span class="payment-value" id="cashTotal">—</span></div>
+              <div class="payment-row transfer"><span class="payment-label"><i class="payment-dot"></i>Transferencia</span><span class="payment-value" id="transferTotal">—</span></div>
+            </div>
+          </div>
+          <p class="mock-chart-note">Porcentajes inventados para la vista previa; no representan pagos reales registrados.</p>
+        </section>
+      </div>
+      <section class="panel" style="margin-top:18px" aria-labelledby="products-title">
+        <div class="panel-head"><div><h2 id="products-title">Productos destacados</h2><p class="panel-note">Distribución ilustrativa del día</p></div></div>
+        <div class="product-list" id="productList"></div>
+      </section>
+    </section>
+
+    <section class="page-view" id="view-vendedores" data-page="vendedores" aria-labelledby="vendedores-title" hidden>
+      <div class="view-heading"><h1 id="vendedores-title">Vendedores</h1><p class="subtitle">Consulta el reporte de cada vendedor en el día seleccionado.</p></div>
+      <div class="toolbar"><label class="field"><input id="sellerSearch" type="search" placeholder="Buscar vendedor…" aria-label="Buscar vendedor"></label><span class="updated-pill">Solo lectura</span></div>
+      <section class="panel table-panel">
+        <div class="table-title"><div class="panel-head" style="margin:0"><div><h2>Reporte diario</h2><p class="panel-note" id="tableCount"></p></div></div></div>
+        <div class="table-scroll"><table><thead><tr><th>Vendedor</th><th>Unidades</th><th>Ingresos</th><th>Ganancia</th><th>Reporte individual</th></tr></thead><tbody id="sellerTable"></tbody></table><div class="empty" id="emptyState" hidden>No hay vendedores que coincidan con la búsqueda.</div></div>
+      </section>
+      <p class="export-hint">Los botones individuales CSV/PDF son de muestra y no descargan archivos.</p>
+    </section>
+
+    <section class="page-view" id="view-ranking" data-page="ranking" aria-labelledby="ranking-title" hidden>
+      <div class="view-heading"><h1 id="ranking-title">Ranking del día</h1><p class="subtitle">Vendedores ordenados por ingresos en la fecha seleccionada.</p></div>
+      <section class="panel"><div class="panel-head"><div><h2>Desempeño de vendedores</h2><p class="panel-note">Comparación visual · solo consulta</p></div><span class="updated-pill">Datos ficticios</span></div><div class="seller-list" id="sellerList"></div></section>
+    </section>
+
+    <section class="page-view" id="view-detalle" data-page="detalle" aria-labelledby="detail-title" hidden>
+      <div class="view-heading"><h1 id="detail-title">Detalle de vendedor</h1><p class="subtitle">Consulta el resumen individual del día elegido.</p></div>
+      <div class="toolbar"><label class="field"><select id="detailSeller" aria-label="Seleccionar vendedor"></select></label><div class="export-actions" aria-label="Acciones de reporte individual (demostración)"><button class="export-button" type="button" aria-label="Descargar CSV del vendedor (solo muestra)">Descargar CSV</button><button class="export-button pdf" type="button" aria-label="Descargar PDF del vendedor (solo muestra)">Descargar PDF</button></div></div>
+      <div class="stats">
+        <article class="stat"><div class="stat-label">Unidades vendidas</div><div class="stat-value" id="detailUnits">—</div></article>
+        <article class="stat"><div class="stat-label">Ingresos del día</div><div class="stat-value" id="detailIncome">—</div></article>
+        <article class="stat"><div class="stat-label">Ganancia estimada</div><div class="stat-value" id="detailProfit">—</div></article>
+        <article class="stat"><div class="stat-label">Fecha del reporte</div><div class="stat-value" id="detailDate">—</div></article>
+      </div>
+      <section class="panel"><div class="panel-head"><div><h2>Productos vendidos</h2><p class="panel-note">Desglose demostrativo por producto</p></div></div><div class="table-scroll"><table><thead><tr><th>Producto</th><th>Unidades</th><th>Ingreso estimado</th></tr></thead><tbody id="detailProducts"></tbody></table></div></section>
+      <p class="export-hint">Los botones individuales CSV/PDF son elementos visuales; no ejecutan una descarga.</p>
+    </section>
+    <p class="footnote">* Nombres, fechas y valores son inventados para la muestra. La integración futura sería de consulta; no modificaría los registros.</p>
+  </main>
+  </div>
+
+  <section class="preview-surface vendor-preview" id="vendorPreview" hidden aria-labelledby="vendorPreviewTitle">
+    <div class="vendor-preview-head">
+      <h1 id="vendorPreviewTitle">¡Hola, María Fernanda!</h1>
+      <p class="subtitle">Consulta de ejemplo para el puesto de vinos.</p>
+      <svg class="vendor-head-art" viewBox="0 0 170 140" aria-hidden="true">
+        <path d="M4 20c51 8 58 45 95 41 27-3 34-26 67-19M87 61c-15 23-7 48 9 67"/>
+        <path class="leaf" d="M27 23C10 6 2 25 22 31c9 2 13-1 5-8zm53 31c-6-22 15-24 16-3 0 11-7 14-16 3zm52 1c17-18 28 0 7 11-9 4-14 0-7-11zm-33 37c-20-14-28 4-6 12 9 3 13-2 6-12z"/>
+        <ellipse class="berry" cx="111" cy="83" rx="7" ry="8"/><ellipse class="berry" cx="124" cy="83" rx="7" ry="8"/><ellipse class="berry" cx="104" cy="97" rx="7" ry="8"/><ellipse class="berry" cx="117" cy="98" rx="7" ry="8"/><ellipse class="berry" cx="110" cy="111" rx="7" ry="8"/>
+      </svg>
+    </div>
+    <div class="vendor-tabs"><span class="vendor-tab active">Mis productos</span><span class="vendor-tab">Registro del día</span><span class="vendor-tab">Historial</span></div>
+    <div class="stats">
+      <article class="stat"><div class="stat-label">Ingresos de hoy</div><div class="stat-value">$ 220.000</div><div class="stat-note">Solo información de ejemplo</div></article>
+      <article class="stat"><div class="stat-label">Ganancia estimada</div><div class="stat-value">$ 68.000</div><div class="stat-note">Según ventas ficticias</div></article>
+      <article class="stat"><div class="stat-label">Unidades vendidas</div><div class="stat-value">20</div><div class="stat-note">Fecha demostrativa</div></article>
+    </div>
+    <section class="panel vendor-card">
+      <div class="panel-head"><div><h2>Mis productos</h2><p class="panel-note">Decoración cultural aplicada a la vista del vendedor.</p></div><span class="updated-pill">Solo muestra</span></div>
+      <div class="table-scroll"><table><thead><tr><th>Producto</th><th>Precio</th><th>Unidades del día</th></tr></thead><tbody><tr><td>Copa de vino</td><td>$ 10.000</td><td>8</td></tr><tr><td>Jugo de uva</td><td>$ 8.000</td><td>6</td></tr><tr><td>Mermelada artesanal</td><td>$ 12.000</td><td>4</td></tr><tr><td>Canasta de uvas</td><td>$ 15.000</td><td>2</td></tr></tbody></table></div>
+    </section>
+  </section>
+
+  <section class="preview-surface login-preview" id="loginPreview" hidden aria-labelledby="loginTitle">
+    <div class="login-card">
+      <div class="login-art">
+        <div class="login-brand"><img src="assets/images/logo.jpg" alt=""><div><span>Festival de la Uva</span><strong>Villa del Rosario</strong></div></div>
+        <svg class="grape-art" viewBox="0 0 180 250" aria-hidden="true">
+          <defs><radialGradient id="goldGrape" cx="32%" cy="26%"><stop offset="0" stop-color="#84613c"/><stop offset=".5" stop-color="#53304d"/><stop offset="1" stop-color="#321638"/></radialGradient></defs>
+          <path class="vine" d="M95 0c1 25-11 34-2 52 8 15 21 17 25 33"/>
+          <path class="leaf" d="M94 35c-28-27-54-5-26 13 14 9 25 5 26-13zm13 4c18-31 48-17 26 8-12 13-25 10-26-8zm-28 21C47 50 38 79 68 82c16 2 22-8 11-22z"/>
+          <path class="leaf leaf-light" d="M89 31c-4-19 5-27 12-31 4 17 0 28-12 31z"/>
+          <path class="vine" d="M94 48c-4 19-12 24-8 38m21-31c10 9 17 13 17 28m-38-7c-7 11-13 13-14 25m51-22c11 7 17 14 17 24"/>
+          <circle class="berry" cx="87" cy="94" r="14"/><circle class="berry" cx="113" cy="94" r="14"/>
+          <circle class="berry" cx="74" cy="119" r="14"/><circle class="berry" cx="100" cy="120" r="14"/><circle class="berry" cx="126" cy="119" r="14"/>
+          <circle class="berry" cx="87" cy="145" r="14"/><circle class="berry" cx="113" cy="145" r="14"/>
+          <circle class="berry" cx="100" cy="169" r="14"/>
+          <circle class="berry-shine" cx="82" cy="90" r="3"/><circle class="berry-shine" cx="108" cy="90" r="3"/>
+          <circle class="berry-shine" cx="69" cy="115" r="3"/><circle class="berry-shine" cx="95" cy="116" r="3"/><circle class="berry-shine" cx="121" cy="115" r="3"/>
+          <circle class="berry-shine" cx="82" cy="141" r="3"/><circle class="berry-shine" cx="108" cy="141" r="3"/><circle class="berry-shine" cx="95" cy="165" r="3"/>
+        </svg>
+        <div class="login-copy"><h1 id="loginTitle">Los vendedores son el alma del Festival de la Uva, llevando tradición, emprendimiento y alegría a cada visitante.</h1><p>Feria de la Uva de Villa del Rosario · 2026.</p></div>
+        <img class="church-art" src="assets/images/villa-del-rosario-login.png" alt="Ilustración de la iglesia histórica de Villa del Rosario con palmas">
+      </div>
+      <div class="login-form">
+        <h2>Bienvenido</h2><p class="subtitle">Ingresa a la plataforma del festival.</p>
+        <label for="previewUser">Usuario</label><input id="previewUser" type="text" placeholder="tu usuario" autocomplete="off">
+        <label for="previewPassword">Contraseña</label><input id="previewPassword" type="password" placeholder="tu contraseña" autocomplete="off">
+        <button class="button" type="button">Ingresar</button>
+        <p class="login-caption">Vista de diseño · el formulario no inicia sesión ni envía información.</p>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const names = ["María Fernanda", "Andrés Pabón", "Lucía Ramírez", "Carlos Duarte", "Valentina Rojas"];
+      const products = [
+        { name: "Copa de vino", price: 10000 },
+        { name: "Jugo de uva", price: 8000 },
+        { name: "Mermelada artesanal", price: 12000 },
+        { name: "Canasta de uvas", price: 15000 }
+      ];
+      const daily = [
+        { date: "2026-10-07", sales: [[245000, 22, 76000], [190000, 19, 59000], [140000, 17, 43000], [75000, 14, 22000], [50000, 12, 15000]] },
+        { date: "2026-10-08", sales: [[250000, 23, 77000], [210000, 21, 65000], [150000, 18, 46000], [110000, 16, 34000], [110000, 15, 33000]] },
+        { date: "2026-10-09", sales: [[270000, 25, 84000], [230000, 23, 71000], [170000, 20, 52000], [140000, 18, 43000], [120000, 16, 36000]] },
+        { date: "2026-10-10", sales: [[240000, 22, 74000], [220000, 22, 68000], [170000, 20, 52000], [130000, 17, 40000], [110000, 15, 33000]] },
+        { date: "2026-10-11", sales: [[280000, 26, 87000], [260000, 25, 80000], [210000, 23, 65000], [180000, 20, 55000], [160000, 18, 47000]] },
+        { date: "2026-10-12", sales: [[220000, 20, 68000], [200000, 19, 62000], [180000, 18, 55000], [160000, 17, 49000], [140000, 16, 43000]] }
+      ];
+      const money = value => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(value);
+      const number = value => new Intl.NumberFormat("es-CO").format(value);
+      const reportDate = document.getElementById("reportDate");
+      const search = document.getElementById("sellerSearch");
+      const detailSeller = document.getElementById("detailSeller");
+      const selectedDay = () => daily.find(day => day.date === reportDate.value) || { date: reportDate.value, sales: [] };
+      const cashShares = [0.64, 0.42, 0.55, 0.38, 0.7];
+      const sellerRows = day => day.sales.map((sale, index) => {
+        const cash = Math.round(sale[0] * cashShares[index] / 100) * 100;
+        return {
+          name: names[index], income: sale[0], units: sale[1], profit: sale[2],
+          cash, transfer: sale[0] - cash
+        };
+      });
+      const dateLabel = date => new Date(`${date}T00:00:00`).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+      function showView(view) {
+        document.querySelectorAll("[data-page]").forEach(section => { section.hidden = section.dataset.page !== view; });
+        document.querySelectorAll(".nav-button").forEach(button => {
+          const active = button.dataset.view === view;
+          button.classList.toggle("active", active);
+          if (active) button.setAttribute("aria-current", "page");
+          else button.removeAttribute("aria-current");
+        });
+        if (view === "detalle") renderDetail();
+      }
+
+      function render() {
+        const day = selectedDay();
+        const rows = sellerRows(day);
+        const totals = rows.reduce((sum, row) => ({
+          units: sum.units + row.units,
+          income: sum.income + row.income,
+          profit: sum.profit + row.profit,
+          cash: sum.cash + row.cash,
+          transfer: sum.transfer + row.transfer
+        }), { units: 0, income: 0, profit: 0, cash: 0, transfer: 0 });
+        document.getElementById("dashboardDate").textContent = dateLabel(day.date);
+        document.getElementById("salesTotal").textContent = number(rows.length);
+        document.getElementById("incomeTotal").textContent = money(totals.income);
+        document.getElementById("profitTotal").textContent = money(totals.profit);
+        document.getElementById("unitsTotal").textContent = number(totals.units);
+        document.getElementById("cashTotal").textContent = money(totals.cash);
+        document.getElementById("transferTotal").textContent = money(totals.transfer);
+        document.getElementById("paymentDonut").style.setProperty("--cash-percent", `${totals.income ? totals.cash / totals.income * 100 : 0}%`);
+        const query = search.value.trim().toLocaleLowerCase("es-CO");
+        const visibleRows = rows.filter(row => row.name.toLocaleLowerCase("es-CO").includes(query));
+        const sorted = rows.slice().sort((a, b) => b.income - a.income);
+        const maxIncome = Math.max(...sorted.map(row => row.income), 1);
+        document.getElementById("sellerList").innerHTML = sorted.length
+          ? sorted.map((seller, index) => `
+            <div class="seller"><div class="rank">${index + 1}</div><div>
+              <div class="seller-meta"><span class="seller-name">${seller.name}</span><span class="seller-units">${number(seller.units)} unidades</span></div>
+              <div class="progress" aria-label="${Math.round(seller.income / maxIncome * 100)}% relativo"><span style="width:${Math.max(5, seller.income / maxIncome * 100)}%"></span></div>
+            </div><div class="seller-total">${money(seller.income)}</div></div>`).join("")
+          : '<div class="empty">No hay reportes para este día.</div>';
+        document.getElementById("sellerTable").innerHTML = visibleRows.map(seller => `
+          <tr><td>${seller.name}</td><td>${number(seller.units)}</td><td>${money(seller.income)}</td><td>${money(seller.profit)}</td><td><div class="export-actions"><button class="export-button" type="button" aria-label="Descargar CSV de ${seller.name} (solo muestra)">Descargar CSV</button><button class="export-button pdf" type="button" aria-label="Descargar PDF de ${seller.name} (solo muestra)">Descargar PDF</button></div></td></tr>`).join("");
+        document.getElementById("emptyState").hidden = visibleRows.length > 0;
+        document.getElementById("tableCount").textContent = `${visibleRows.length} vendedores · ${dateLabel(day.date)}`;
+        renderTrend(daily.map(item => ({
+          date: item.date,
+          income: item.sales.reduce((sum, sale) => sum + sale[0], 0)
+        })), "income", "trend", 1200000);
+        renderTrend(daily.map(item => ({
+          date: item.date,
+          profit: item.sales.reduce((sum, sale) => sum + sale[2], 0)
+        })), "profit", "profit", 400000);
+        const productUnits = splitProducts(totals.units);
+        document.getElementById("productList").innerHTML = products.map((product, index) => `
+          <div class="product-row"><span class="product-label"><span class="product-dot"></span>${product.name}</span><span class="product-qty">${number(productUnits[index])}</span></div>`).join("");
+        if (!detailSeller.options.length) {
+          detailSeller.innerHTML = names.map(name => `<option value="${name}">${name}</option>`).join("");
+        }
+        renderDetail();
+      }
+
+      function splitProducts(units) {
+        const first = Math.round(units * .36);
+        const second = Math.round(units * .29);
+        const third = Math.round(units * .2);
+        return [first, second, third, Math.max(0, units - first - second - third)];
+      }
+
+      function renderDetail() {
+        if (!detailSeller.options.length) return;
+        const day = selectedDay();
+        const seller = sellerRows(day).find(row => row.name === detailSeller.value);
+        document.getElementById("detailUnits").textContent = number(seller?.units || 0);
+        document.getElementById("detailIncome").textContent = money(seller?.income || 0);
+        document.getElementById("detailProfit").textContent = money(seller?.profit || 0);
+        document.getElementById("detailDate").textContent = new Date(`${day.date}T00:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+        const quantities = splitProducts(seller?.units || 0);
+        const shares = [0.36, 0.29, 0.2, 0.15];
+        document.getElementById("detailProducts").innerHTML = seller
+          ? products.map((product, index) => `<tr><td>${product.name}</td><td>${number(quantities[index])}</td><td>${money(Math.round(seller.income * shares[index]))}</td></tr>`).join("")
+          : '<tr><td colspan="3">No hay un reporte para esta fecha.</td></tr>';
+      }
+
+      function renderTrend(rows, metric, prefix, maximum) {
+        const points = rows.map((row, index) => {
+          const x = rows.length === 1 ? 189 : 34 + index * 310 / (rows.length - 1);
+          const y = 142 - row[metric] / maximum * 120;
+          return [x, Math.max(22, y)];
+        });
+        if (!points.length) return;
+        const line = points.map((point, index) => `${index ? "L" : "M"}${point[0]},${point[1]}`).join(" ");
+        document.getElementById(`${prefix}Line`).setAttribute("d", line);
+        document.getElementById(`${prefix}Area`).setAttribute("d", `${line} L${points[points.length - 1][0]},142 L${points[0][0]},142 Z`);
+        document.getElementById(`${prefix}Dots`).innerHTML = points.map(point => `<circle class="chart-dot" cx="${point[0]}" cy="${point[1]}" r="5"/>`).join("");
+        document.getElementById(`${prefix}Labels`).innerHTML = rows.map((row, index) => {
+          const x = rows.length === 1 ? 189 : 34 + index * 310 / (rows.length - 1);
+          const label = new Date(`${row.date}T00:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+          return `<text class="chart-label" x="${x}" y="166" text-anchor="middle">${label}</text>`;
+        }).join("");
+      }
+
+      function exportCsv() {
+        const day = selectedDay();
+        const rows = sellerRows(day);
+        const csv = [
+          ["Reporte diario de ventas", dateLabel(day.date)],
+          ["Vendedor", "Unidades", "Ingresos COP", "Ganancia COP"],
+          ...rows.map(seller => [seller.name, seller.units, seller.income, seller.profit]),
+          ["TOTAL", rows.reduce((sum, row) => sum + row.units, 0), rows.reduce((sum, row) => sum + row.income, 0), rows.reduce((sum, row) => sum + row.profit, 0)]
+        ].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\r\n");
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+        link.href = url;
+        link.download = `reporte-ventas-${day.date}.csv`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      document.querySelectorAll(".nav-button").forEach(button => button.addEventListener("click", () => showView(button.dataset.view)));
+      reportDate.addEventListener("change", render);
+      search.addEventListener("input", render);
+      detailSeller.addEventListener("change", renderDetail);
+      document.getElementById("exportCsv").addEventListener("click", exportCsv);
+      document.getElementById("printReport").addEventListener("click", () => window.print());
+      document.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => {
+        const mode = button.dataset.mode;
+        document.querySelectorAll("[data-mode]").forEach(option => option.classList.toggle("active", option === button));
+        document.getElementById("mainHeader").hidden = mode === "login";
+        document.querySelector(".app-layout").hidden = mode !== "admin";
+        document.getElementById("vendorPreview").hidden = mode !== "vendor";
+        document.getElementById("loginPreview").hidden = mode !== "login";
+        document.getElementById("roleBadge").textContent = mode === "vendor" ? "Vendedor" : "Administración";
+      }));
+      render();
+    })();
+  </script>
+</body>
+</html>
